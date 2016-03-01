@@ -54,7 +54,7 @@ public class ViewPagerAdapter extends PagerAdapter {
     }
 
     @Override
-    public Object instantiateItem(ViewGroup container, final int position) {
+        public Object instantiateItem(ViewGroup container, final int position) {
 
         // Declare Variables
 

@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         comment.setEnabled(false);
                 poss=0;
         screenwidth = 0;
+
         filters = new LayerDrawable[6];
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         ConnectivityManager connMgr = (ConnectivityManager)
