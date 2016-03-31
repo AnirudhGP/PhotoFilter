@@ -36,13 +36,13 @@ import javax.microedition.khronos.opengles.GL10;
 public class ViewPagerAdapter extends PagerAdapter {
     // Declare Variables
     Context context;
-    LayerDrawable[] flag;
+    LayerDrawable[] filters;
     int width,height;
     Bitmap bitmap;
     Bitmap b;
     ImageView imgflag;
-    public ViewPagerAdapter(Context context, LayerDrawable[] flag,Bitmap bitmap,int width,int height) {
-        this.flag = flag;
+    public ViewPagerAdapter(Context context, LayerDrawable[] filters,Bitmap bitmap,int width,int height) {
+        this.filters =filters;
         this.context=context;
         this.bitmap=bitmap;
         this.width=width;
@@ -51,7 +51,7 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     @Override
     public int getCount() {
-        return flag.length+1 ;
+        return filters.length+1 ;
     }
 
     @Override
@@ -61,14 +61,11 @@ public class ViewPagerAdapter extends PagerAdapter {
 
     @Override
         public Object instantiateItem(ViewGroup container, final int position) {
-
-        // Declare Variables
-
         LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View itemView = inflater.inflate(R.layout.viewpager_item, container,
                 false);
-        imgflag=(ImageView)itemView.findViewById(R.id.flag);
+        imgflag=(ImageView)itemView.findViewById(R.id.image_filter);
         imgflag.getLayoutParams().height = height;
         imgflag.getLayoutParams().width = width;
         imgflag.requestLayout();
@@ -83,21 +80,16 @@ public class ViewPagerAdapter extends PagerAdapter {
                 @Override
                 public void onClick(View view) {
                     Log.d("FAB", "Here");
-                    MainActivity.pos = position;
-                    MainActivity.mImageView.setImageBitmap(bitmap);
-                    MainActivity.comment.setEnabled(true);
-                    MainActivity.comment.bringToFront();
+                    MainActivity.setImage(0);
                     ((Gallery) context).finish();
                 }
             });
         }
         else {
             b = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            flag[position-1].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
-            flag[position-1].draw(new Canvas(b));
-
+            filters[position-1].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+            filters[position-1].draw(new Canvas(b));
             imgflag.setImageBitmap(b);
-            // Add viewpager_item.xml to ViewPager
             ((ViewPager) container).addView(itemView);
             FloatingActionButton fab = (FloatingActionButton) itemView.findViewById(R.id.fab);
             fab.setOnClickListener(new View.OnClickListener() {
@@ -105,10 +97,7 @@ public class ViewPagerAdapter extends PagerAdapter {
                 public void onClick(View view) {
                     Log.d("FAB", "Here");
                     MainActivity.pos = position-1;
-                    //MainActivity.mImageView.setImageBitmap(b);
-                    MainActivity.setImage();
-                    MainActivity.comment.setEnabled(true);
-                    MainActivity.comment.bringToFront();
+                    MainActivity.setImage(1);
                     ((Gallery) context).finish();
                 }
             });

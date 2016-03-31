@@ -62,12 +62,10 @@ public class MainActivity extends AppCompatActivity {
     LayerDrawable layerDrawable;
     Drawable[] layers;
     private int screenwidth;
-    public static EditText comment;
-    public static Bitmap bitmap;
-    int poss=0;
+    private static EditText comment;
+    private static Bitmap bitmap;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -75,27 +73,20 @@ public class MainActivity extends AppCompatActivity {
         mImageView = (ImageView) findViewById(R.id.imageView);
         comment = (EditText) findViewById(R.id.editText);
         comment.setEnabled(false);
-                poss=0;
         screenwidth = 0;
-
         filters = new LayerDrawable[6];
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        ConnectivityManager connMgr = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Log.d("Camera", "Here");
                     Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    // Ensure that there's a camera activity to handle the intent
                     File photoFile = null;
                     try {
                         photoFile = createImageFile();
                     } catch (IOException ex) {
                         ex.printStackTrace();
-                        // Error occurred while creating the File
                     }
-                    // Continue only if the File was successfully created
                     if (photoFile != null) {
                         mImageUri = Uri.fromFile(photoFile);
                         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
@@ -118,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
                 storageDir      /* directory */
         );
         Log.d("image",image.length()+"");
-        // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = "file:" + image.getAbsolutePath();
         return image;
     }
@@ -129,14 +119,28 @@ public class MainActivity extends AppCompatActivity {
             this.grabImage();
         }
     }
-    public static void setImage()
-    {
-        Bitmap b = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        filters[pos].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
-        filters[pos].draw(new Canvas(b));
 
-        mImageView.setImageBitmap(b);
+    //Called after user selects a filter to save
+    public static void setImage(int flag)
+    {
+        Bitmap final_image;
+        if(flag==1) {
+            Bitmap b = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            filters[pos].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+            filters[pos].draw(new Canvas(b));
+            mImageView.setImageBitmap(b);
+            final_image=getResizedBitmap(b,592,1052);
+        }
+        else {
+            mImageView.setImageBitmap(bitmap);
+            final_image=getResizedBitmap(bitmap,592,1052);
+        }
+        comment.setEnabled(true);
+        comment.bringToFront();
+        //Send final_image to server
     }
+
+    //Displays filters
     public void grabImage()
     {
         this.getContentResolver().notifyChange(mImageUri, null);
@@ -151,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             width = displaymetrics.widthPixels;
             Bitmap bitmap_temp = decodeFile(new File(mImageUri.getPath()));
             bitmap = bitmap_temp;
+            //bitmap = getResizedBitmap(bitmap,592,1052);
             Log.d("bitmap2",bitmap.getHeight()+" "+bitmap.getWidth());
             Gallery.bitmap=bitmap;
              for(int i = 0;i<6;i++) {
@@ -168,10 +173,29 @@ public class MainActivity extends AppCompatActivity {
         }
         catch (Exception e)
         {
-            Toast.makeText(this, "Failed to load", Toast.LENGTH_SHORT).show();
-            Log.d("vav", "Failed to load", e);
+            Log.d("gradbimage()", "Failed to load", e);
         }
     }
+
+    //Resize Bitmap
+    private static Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                bm, 0, 0, width, height, matrix, false);
+        bm.recycle();
+        return resizedBitmap;
+    }
+
+
     public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         // Raw height and width of image
         final int height = options.outHeight;
@@ -203,6 +227,7 @@ public class MainActivity extends AppCompatActivity {
         return BitmapFactory.decodeResource(res, resId, options);
     }
 
+    //Scale to screen size
     private Bitmap decodeFile(File f){
         try {
             //decode image size
