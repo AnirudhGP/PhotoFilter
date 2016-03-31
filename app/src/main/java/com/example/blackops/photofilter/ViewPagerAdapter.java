@@ -7,12 +7,14 @@ package com.example.blackops.photofilter;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.ImageView;
 import android.content.Context;
@@ -35,12 +37,16 @@ public class ViewPagerAdapter extends PagerAdapter {
     // Declare Variables
     Context context;
     LayerDrawable[] flag;
+    int width,height;
     Bitmap bitmap;
+    Bitmap b;
     ImageView imgflag;
-    public ViewPagerAdapter(Context context, LayerDrawable[] flag,Bitmap bitmap) {
+    public ViewPagerAdapter(Context context, LayerDrawable[] flag,Bitmap bitmap,int width,int height) {
         this.flag = flag;
         this.context=context;
         this.bitmap=bitmap;
+        this.width=width;
+        this.height=height;
         }
 
     @Override
@@ -63,6 +69,9 @@ public class ViewPagerAdapter extends PagerAdapter {
         View itemView = inflater.inflate(R.layout.viewpager_item, container,
                 false);
         imgflag=(ImageView)itemView.findViewById(R.id.flag);
+        imgflag.getLayoutParams().height = height;
+        imgflag.getLayoutParams().width = width;
+        imgflag.requestLayout();
         if(position==0)
         {
             Log.d("bitmap",bitmap.getHeight()+" "+bitmap.getWidth());
@@ -83,7 +92,11 @@ public class ViewPagerAdapter extends PagerAdapter {
             });
         }
         else {
-            imgflag.setImageDrawable(flag[position-1]);
+            b = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            flag[position-1].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+            flag[position-1].draw(new Canvas(b));
+
+            imgflag.setImageBitmap(b);
             // Add viewpager_item.xml to ViewPager
             ((ViewPager) container).addView(itemView);
             FloatingActionButton fab = (FloatingActionButton) itemView.findViewById(R.id.fab);
@@ -92,7 +105,8 @@ public class ViewPagerAdapter extends PagerAdapter {
                 public void onClick(View view) {
                     Log.d("FAB", "Here");
                     MainActivity.pos = position-1;
-                    MainActivity.mImageView.setImageDrawable(flag[position-1]);
+                    //MainActivity.mImageView.setImageBitmap(b);
+                    MainActivity.setImage();
                     MainActivity.comment.setEnabled(true);
                     MainActivity.comment.bringToFront();
                     ((Gallery) context).finish();

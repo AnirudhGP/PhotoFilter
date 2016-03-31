@@ -29,7 +29,7 @@ public class Gallery extends AppCompatActivity {
         // Locate the ViewPager in viewpager_main.xml
         viewPager = (ViewPager) findViewById(R.id.pager);
         // Pass results to ViewPagerAdapter Class
-        adapter = new ViewPagerAdapter(Gallery.this, MainActivity.filters,this.bitmap);
+        adapter = new ViewPagerAdapter(Gallery.this, MainActivity.filters,this.bitmap,MainActivity.width,MainActivity.height);
         // Binds the Adapter to the ViewPager
         viewPager.setAdapter(adapter);
 

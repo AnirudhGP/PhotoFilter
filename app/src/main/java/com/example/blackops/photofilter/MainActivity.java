@@ -37,6 +37,8 @@ import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_TAKE_PHOTO = 1;
     static final int REQUEST_IMAGE_CAPTURE = 1;
     private Uri mImageUri;
+    public static int width,height;
     public static ImageView mImageView;
     String mCurrentPhotoPath;
     public static int pos;
@@ -126,7 +129,14 @@ public class MainActivity extends AppCompatActivity {
             this.grabImage();
         }
     }
+    public static void setImage()
+    {
+        Bitmap b = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        filters[pos].setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        filters[pos].draw(new Canvas(b));
 
+        mImageView.setImageBitmap(b);
+    }
     public void grabImage()
     {
         this.getContentResolver().notifyChange(mImageUri, null);
@@ -137,17 +147,16 @@ public class MainActivity extends AppCompatActivity {
             Log.d("bitmap",bitmap.getHeight()+" "+bitmap.getWidth());
             DisplayMetrics displaymetrics = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-            int height = displaymetrics.heightPixels;
-            int width = displaymetrics.widthPixels;
-            screenwidth = width;
-            scaleImageKeepAspectRatio();
-            Log.d("bitmap",bitmap.getHeight()+" "+bitmap.getWidth());
+            height = displaymetrics.heightPixels;
+            width = displaymetrics.widthPixels;
+            Bitmap bitmap_temp = decodeFile(new File(mImageUri.getPath()));
+            bitmap = bitmap_temp;
+            Log.d("bitmap2",bitmap.getHeight()+" "+bitmap.getWidth());
             Gallery.bitmap=bitmap;
              for(int i = 0;i<6;i++) {
                 String fileName = "ccborder" + i;
-                int resID= getApplicationContext().getResources().getIdentifier(fileName,"drawable",getApplicationContext().getPackageName());
-                filter = decodeSampledBitmapFromResource(getResources(), resID, bitmap.getWidth(),bitmap.getHeight());
-
+                int resID= getApplicationContext().getResources().getIdentifier(fileName, "drawable", getApplicationContext().getPackageName());
+                filter = decodeSampledBitmapFromResource(getResources(), resID, bitmap.getHeight(),bitmap.getWidth());
                 layers = new Drawable[2];
                 layers[0] = new BitmapDrawable(getResources(),bitmap);
                 layers[1] = new BitmapDrawable(getResources(),filter);
@@ -163,32 +172,22 @@ public class MainActivity extends AppCompatActivity {
             Log.d("vav", "Failed to load", e);
         }
     }
-
-
-    public static int calculateInSampleSize(
-            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    public int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         // Raw height and width of image
         final int height = options.outHeight;
         final int width = options.outWidth;
         int inSampleSize = 1;
 
         if (height > reqHeight || width > reqWidth) {
-
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
-
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while ((halfHeight / inSampleSize) > reqHeight
-                    && (halfWidth / inSampleSize) > reqWidth) {
-                inSampleSize *= 2;
+            if (width > height) {
+                inSampleSize = Math.round((float)height / (float)reqHeight);
+            } else {
+                inSampleSize = Math.round((float)width / (float)reqWidth);
             }
         }
-
         return inSampleSize;
     }
-
-    public static Bitmap decodeSampledBitmapFromResource(Resources res, int resId,
+    public Bitmap decodeSampledBitmapFromResource(Resources res, int resId,
                                                          int reqWidth, int reqHeight) {
 
         // First decode with inJustDecodeBounds=true to check dimensions
@@ -203,30 +202,33 @@ public class MainActivity extends AppCompatActivity {
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeResource(res, resId, options);
     }
-    public void scaleImageKeepAspectRatio()
-    {
-        int imageWidth = bitmap.getWidth();
-        int imageHeight = bitmap.getHeight();
-        int newHeight = (imageHeight * screenwidth)/imageWidth;
-        bitmap = Bitmap.createScaledBitmap(bitmap, screenwidth, newHeight, false);
 
-    }
+    private Bitmap decodeFile(File f){
+        try {
+            //decode image size
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            BitmapFactory.decodeStream(new FileInputStream(f), null, o);
+            //Find the correct scale value. It should be the power of 2.
+            Log.d("original",o.outWidth+" : "+o.outHeight);
+            Log.d("screen",width+" : "+height);
+            final int REQUIRED_SIZE=70;
+            int width_tmp=o.outWidth, height_tmp=o.outHeight;
+            int scale=1;
+            while(true){
+                if(width_tmp<width && height_tmp<height)
+                    break;
+                width_tmp/=2;
+                height_tmp/=2;
+                scale++;
+            }
 
-    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // CREATE A MATRIX FOR THE MANIPULATION
-        Matrix matrix = new Matrix();
-        // RESIZE THE BIT MAP
-        matrix.postScale(scaleWidth, scaleHeight);
-
-        // "RECREATE" THE NEW BITMAP
-        Bitmap resizedBitmap = Bitmap.createBitmap(
-                bm, 0, 0, width, height, matrix, false);
-        bm.recycle();
-        return resizedBitmap;
+            //decode with inSampleSize
+            BitmapFactory.Options o2 = new BitmapFactory.Options();
+            o2.inSampleSize=scale;
+            return BitmapFactory.decodeStream(new FileInputStream(f), null, o2);
+        } catch (FileNotFoundException e) {}
+        return null;
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
